@@ -40,7 +40,7 @@ aligne_list = []
 hdr_fail = False
 #iterator
 i = 0
-limit = data.shape[0]
+limit = (data.shape[0] -1)
 if True:
     while i < limit:
         logging.info("starting hdr of column {}/{}".format(x,y))
@@ -54,8 +54,11 @@ if True:
         while data["grid_x"][i] == x and data["grid_y"][i] == y and i < limit:
             #print("finding all elements in specific z position")
             #print(data["z_pos"][i])
-            hdr_list = []
-            hdr_command = []
+            try:
+                hdr_list = []
+                hdr_command = []
+            except:
+                pass
             while data["z_pos"][i] == Z and i < limit :
                 #print("this is the combination",Z,data["z_pos"][i])
                 hdr_list.append(data["name"][i])
