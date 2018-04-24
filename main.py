@@ -735,19 +735,9 @@ while not done:
                     
 
                     for button in label_list:
-
-
-                           
-                        
-                        shot_canny.append(e)
-                        shot_z_pos.append(i)
-                        shot_iso.append(button.value[1])
-                        shot_shutter.append(button.value[0])
-                        shot_grid_x.append(grid_index_x)
-                        shot_grid_y.append(grid_index_y)
-                        
-
-                        
+                        #Configure this boolean for control flow later
+                        shot_fail = False
+                        #this is the basic photo process
                         dslr(cam_iso(button.value[1]))
                         time.sleep(0.3)
                         dslr(cam_shutter(button.value[0]))
@@ -757,17 +747,25 @@ while not done:
                         d1 = time.time()
                         shot_time.append(d1)
                         time.sleep(img_list[img_index][2])
+                        #Now we validate if the shot is in the camera memory
+                        #We compare the count of shots in the program to the amount found un the folder that stores the images on the camera
                         shot_n = len(shot_canny)
+                        #every 999 photos the nikon D3200 creates a new directory, this needs a quick fix
                         cam_bug_index = math.floor(shot_n/999)
+                        #look refers to images found in camera file
                         look = files_num(cam_bug_index)
+                        #look2 refers to count in the program
                         look2 = (shot_n%999)
+                        #these lines are just so there is no problem on file 999.
                         if look2 == 0:
                             look2 = 999
                         else:
                             cam_bug_index = math.floor(shot_n/999)
 
                         logging.info("CAM/REG -- {}/{}".format(look,look2))
+                        # A cicles count for validating the photo in the camera
                         check_cycles = 0
+                        #validation loop if the file has not been found on the camera yet, if more than max_cycles ocure an error is raised
                         while look != look2:
                             time.sleep(img_list[img_index][2])
                             look = files_num()
@@ -782,21 +780,26 @@ while not done:
                             
                                 logging.warning("Faliure in shot x{}|y{}|z{}|s{}|i{}, removing from csv, total = {}".format(grid_index_x,grid_index_y,i,button.value[0],button.value[1],total_err))
                                 total_err +=1
-                            
-                                del shot_canny[-1] 
-                                del shot_z_pos[-1] 
-                                del shot_iso[-1] 
-                                del shot_shutter[-1] 
-                            
-                                del shot_grid_x[-1] 
-                                del shot_grid_y[-1] 
                                 shot_fail = True
                                 break
-                            
+                        #If nothing happened update the data of the run.
                         if not shot_fail:
-                        
+          
+                            shot_canny.append(e)
+                            shot_z_pos.append(i)
+                            shot_iso.append(button.value[1])
+                            shot_shutter.append(button.value[0])
+                            shot_grid_x.append(grid_index_x)
+                            shot_grid_y.append(grid_index_y)
                             shot_dt.append(dt)
-                            
+                            shot_time.append(d1)
+                            camera_files  = subprocess.check_output(['gphoto2','--list-files'], universal_newlines = True)
+                            expression = r"DSC_........"
+                            run_files = re.findall(expression,camera_files)
+                            d = {"name":run_files,"grid_x":shot_grid_x,"grid_y":shot_grid_y, "z_pos":shot_z_pos, "canny":shot_canny,\
+                                 "iso":shot_iso, "shutter":shot_shutter,"dt":shot_dt,"time":shot_time}
+                            df = pd.DataFrame(data=d)
+                            df.to_csv(project_name+".csv")
                             
                             
                     motor.focus_up(z_step)
@@ -814,18 +817,7 @@ while not done:
                 
                     if grid_index_y == (grid_rows - 1):
                         run_mode = False
-                        time.sleep(20)
-                        expression = r"DSC_........"
-                        camera_files  = subprocess.check_output(['gphoto2','--list-files'], universal_newlines = True)
-                        time.sleep(3)
 
-                        run_files = re.findall(expression,camera_files)
-                        logging.warning("name{},grid_x {},grid_y {},z_pos{},canny{},iso {}, shutter{}".format(len(run_files),len(shot_grid_x),len(shot_grid_y),len(shot_z_pos),len(shot_canny),len(shot_iso),len(shot_shutter)))
-                        d = {"name":run_files,"grid_x":shot_grid_x,"grid_y":shot_grid_y, "z_pos":shot_z_pos, "canny":shot_canny,"iso":shot_iso, "shutter":shot_shutter,"shot_dt":shot_dt}
-                        
-                        df = pd.DataFrame(data=d)
-                        
-                        df.to_csv(project_name+".csv")
                         logging.info("TOTAL FILES IN CAMERA MEMORY={}".format(len(run_files)))
                         logging.info("FILES REGISTERED IN CSV ={}".format(len(shot_grid_x)))
                         logging.info('ENDING')
@@ -845,18 +837,7 @@ while not done:
                 
                     if grid_index_y == (grid_rows - 1):
                         run_mode = False
-                        time.sleep(20)
-                        expression = r"DSC_........"
-                        camera_files  = subprocess.check_output(['gphoto2','--list-files'], universal_newlines = True)
-                        time.sleep(3)
 
-                        run_files = re.findall(expression,camera_files)
-                        logging.warning("name{},grid_x {},grid_y {},z_pos{},canny{},iso {}, shutter{}".format(len(run_files),len(shot_grid_x),len(shot_grid_y),shot_z_pos,len(shot_canny),len(shot_iso),len(shot_shutter)))
-                        d = {"name":run_files,"grid_x":shot_grid_x,"grid_y":shot_grid_y, "z_pos":shot_z_pos, "canny":shot_canny,"iso":shot_iso, "shutter":shot_shutter}
-                        
-                        df = pd.DataFrame(data=d)
-                        
-                        df.to_csv(project_name+".csv")
                         logging.info("TOTAL FILES IN CAMERA MEMORY={}".format(len(run_files)))
                         logging.info("FILES REGISTERED IN CSV ={}".format(len(shot_grid_x)))
                         logging.info('ENDING')
