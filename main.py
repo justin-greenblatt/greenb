@@ -1469,7 +1469,7 @@ while not done:
     
     
  
-    if True:#not motor_mode and not run_mode:
+    if not run_mode:
 
         screen.blit(grid_cols_disp.image, (barrier,b1))
         screen.blit(grid_cols_down.image, ((barrier + 185),b1))
